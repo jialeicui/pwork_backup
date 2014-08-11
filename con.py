@@ -1,4 +1,5 @@
 import MySQLdb
+import sys
 
 cur = None
 conn = None
@@ -19,13 +20,20 @@ def close():
     cur.close()
     conn.close()
 
-def get_same_id(lhs, rhs):
+def get_same_id(lhs, rhs, third = None):
     global cur
     cur.execute('select con_3 from '+lhs)
     db1=set(cur.fetchall())
     cur.execute('select con_3 from '+rhs)
     db2=set(cur.fetchall())
+
     res = (db1 & db2)
+
+    if third:
+        cur.execute('select con_3 from '+third)
+        db3=set(cur.fetchall())
+        pass
+    res = res & db3
 
     ret = []
     for one in res:
@@ -33,6 +41,19 @@ def get_same_id(lhs, rhs):
         pass
 
     return ret
+    pass
+
+def add_to_table(ids):
+    global cur
+    global conn
+
+    cur.execute('truncate table same_id')
+
+    sql = 'INSERT INTO same_id (id, con_3) VALUES (NULL, %s)'
+    params = [ids[i] for i in xrange(len(ids))]
+
+    cur.executemany(sql, params)
+    conn.commit()
     pass
 
 def get_header(db):
@@ -45,32 +66,37 @@ def get_header(db):
     return ret
     pass
 def export(ids, db, file):
-    f = open(file, 'w')
-    f.write(get_header(db) + '\n')
     global cur
-    for one in ids:
-        q = 'select * from ' + db + ' where con_3=\'' + str(one) + '\''
-        cur.execute(q);
-        res = cur.fetchone()
 
+    f = open(file, 'w')
+    # f = sys.stdout
+    f.write(get_header(db) + '\n')
+
+    add_to_table(ids)
+    cur.execute('select *,count(distinct('+db+'.con_3)) from same_id,'+db+' where '+db+'.con_3 = same_id.con_3 group by same_id.con_3')
+    res = cur.fetchall()
+
+    for r in res:
         line = ''
-        for r in res:
-            if r == None:
+        for one in r[2:]:
+            if one == None:
                 strr = ''
             else:
-                strr = str(r)
+                strr = str(one)
 
             line = line + strr + ','
 
         f.write(line+'\n')
+
     f.close()
     pass
 
 def main():
     connect()
-    ids = get_same_id('data_table', 'data_table2')
+    ids = get_same_id('data_table', 'data_table2', 'data_table3')
     export(ids, 'data_table', '1.csv')
     export(ids, 'data_table2', '2.csv')
+    export(ids, 'data_table3', '3.csv')
     close()
     pass
 
