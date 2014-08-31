@@ -104,6 +104,7 @@ Sub proc()
             Exit Sub
         End If
         If is_ok(row) Then
+            Range("EN" & row) = "合格"
         End If
     Next
 End Sub
