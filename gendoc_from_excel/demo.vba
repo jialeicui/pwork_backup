@@ -1,5 +1,5 @@
 Option Explicit
-
+'要在工具->引用中勾选 "Microsoft Word xx Object Library"
 Sub CreateWord()
     Dim mypath, Newname, i, XB, wApp, valMap, row, dSheet
     mypath = ThisWorkbook.Path & "\"
